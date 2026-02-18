@@ -1,14 +1,29 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Header from './components/Header';
 import ProductList from './components/ProductList';
+import Admin from './admin/Admin';
 
 export default function App() {
+  const [route, setRoute] = useState(window.location.hash.replace('#', '') || '/');
+
+  useEffect(() => {
+    const onHash = () => setRoute(window.location.hash.replace('#', '') || '/');
+    window.addEventListener('hashchange', onHash);
+    return () => window.removeEventListener('hashchange', onHash);
+  }, []);
+
   return (
     <div>
       <Header />
       <main style={{ padding: 20 }}>
-        <h2>Products</h2>
-        <ProductList />
+        {route === '/admin' ? (
+          <Admin />
+        ) : (
+          <>
+            <h2>Products</h2>
+            <ProductList />
+          </>
+        )}
       </main>
     </div>
   );
