@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Header from './components/Header';
 import ProductList from './components/ProductList';
 import Admin from './admin/Admin';
+import Cart from './components/Cart';
 
 export default function App() {
   const [route, setRoute] = useState(window.location.hash.replace('#', '') || '/');
@@ -18,6 +19,8 @@ export default function App() {
       <main style={{ padding: 20 }}>
         {route === '/admin' ? (
           <Admin />
+        ) : route === '/cart' ? (
+          <Cart />
         ) : (
           <>
             <h2>Products</h2>
