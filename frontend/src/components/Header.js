@@ -1,11 +1,18 @@
 import React, { useEffect, useState } from 'react';
 
 function parseJwt(token) {
+  if (!token || typeof token !== 'string') return null;
   try {
-    const p = token.split('.')[1];
-    const json = decodeURIComponent(atob(p).split('').map(function(c) { return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2); }).join(''));
+    // some environments may not have atob; be defensive
+    if (typeof atob !== 'function') return null;
+    const parts = token.split('.');
+    if (parts.length < 2) return null;
+    const p = parts[1];
+    const json = decodeURIComponent(Array.prototype.map.call(atob(p), function(c) { return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2); }).join(''));
     return JSON.parse(json);
-  } catch (_) { return null; }
+  } catch (err) {
+    return null;
+  }
 }
 
 export default function Header() {

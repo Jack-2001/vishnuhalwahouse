@@ -42,6 +42,8 @@ export default function Cart() {
       if (!res.ok) throw new Error(data.error || 'Order failed');
       setMessage('Order placed — id: ' + data._id);
       clearCart();
+      // notify product list to refresh stock counts
+      window.dispatchEvent(new Event('products-updated'));
     } catch (err) {
       setMessage('Error: ' + err.message);
     } finally { setLoading(false); }
