@@ -56,7 +56,6 @@ export default function ProductList() {
                   if (ex) ex.quantity += 1; else c.push({ product: p._id, name: p.name, price: p.price, image: p.images && p.images[0] || null, quantity: 1 });
                   writeCart(c);
                   setCart(c);
-                  alert('Added to cart');
                 }}>Add to cart</button>
               )}
             </div>
