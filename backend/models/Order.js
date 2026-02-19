@@ -15,6 +15,7 @@ const OrderSchema = new mongoose.Schema({
     phone: String,
     address: String
   },
+  instructions: { type: String },
   status: { type: String, default: 'pending' },
   createdAt: { type: Date, default: Date.now }
 });

@@ -5,7 +5,7 @@ const Product = require('../models/Product');
 
 // Place an order
 router.post('/', async (req, res) => {
-  const { items, customer } = req.body;
+  const { items, customer, instructions } = req.body;
   if (!items || !items.length) return res.status(400).json({ error: 'No items' });
 
   // Validate stock and compute total
@@ -25,7 +25,7 @@ router.post('/', async (req, res) => {
       orderItems.push({ product: prod._id, name: prod.name, quantity: it.quantity, price });
     }
 
-    const order = new Order({ items: orderItems, total, customer });
+    const order = new Order({ items: orderItems, total, customer, instructions });
     await order.save({ session });
     await session.commitTransaction();
     session.endSession();

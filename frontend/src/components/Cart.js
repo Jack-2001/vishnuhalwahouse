@@ -10,6 +10,7 @@ export default function Cart() {
   const [items, setItems] = useState(readCart());
   const [loading, setLoading] = useState(false);
   const [customer, setCustomer] = useState({ name: '', phone: '', address: '' });
+  const [instructions, setInstructions] = useState('');
   const [message, setMessage] = useState(null);
 
   useEffect(() => {
@@ -35,7 +36,7 @@ export default function Cart() {
     if (!customer.name) { alert('Enter your name'); return; }
     setLoading(true); setMessage(null);
     try {
-      const payload = { items: items.map(i => ({ product: i.product, quantity: i.quantity })), customer };
+      const payload = { items: items.map(i => ({ product: i.product, quantity: i.quantity })), customer, instructions };
       const res = await fetch('/api/orders', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Order failed');
@@ -51,6 +52,10 @@ export default function Cart() {
   return (
     <div style={{ maxWidth: 900, margin: '0 auto' }}>
       <h3>Your cart</h3>
+      <div style={{ marginBottom: 12 }}>
+        <label style={{ display: 'block', fontSize: 13 }}>Special instructions (e.g. "No nuts", "Slice into 6 pieces")</label>
+        <textarea value={instructions} onChange={e => setInstructions(e.target.value)} style={{ width: '100%', minHeight: 60 }} />
+      </div>
       {items.length === 0 ? <div>Cart is empty.</div> : (
         <div>
           {items.map(it => (
