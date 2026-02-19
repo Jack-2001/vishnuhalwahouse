@@ -14,11 +14,16 @@ export default function ProductList() {
 
   function readCart() { try { return JSON.parse(localStorage.getItem('vhh_cart') || '[]'); } catch { return []; } }
   function writeCart(c) { localStorage.setItem('vhh_cart', JSON.stringify(c)); window.dispatchEvent(new Event('cart-updated')); }
+  const [cart, setCart] = useState(readCart());
+  useEffect(() => {
+    const onUpdate = () => setCart(readCart());
+    window.addEventListener('cart-updated', onUpdate);
+    return () => window.removeEventListener('cart-updated', onUpdate);
+  }, []);
 
   return (
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(200px,1fr))', gap: 12 }}>
       {products.map(p => {
-        const cart = readCart();
         const existing = cart.find(it => it.product === p._id);
         return (
           <div key={p._id} style={{ border: '1px solid #ddd', padding: 12, borderRadius: 6 }}>
@@ -30,9 +35,9 @@ export default function ProductList() {
             <div style={{ marginTop: 8 }}>
               {existing ? (
                 <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
-                  <button onClick={() => { const c = readCart(); const item = c.find(it => it.product === p._id); if (item) { item.quantity = Math.max(1, item.quantity - 1); writeCart(c); } }}>-</button>
+                  <button onClick={() => { const c = readCart(); const item = c.find(it => it.product === p._id); if (item) { item.quantity = Math.max(1, item.quantity - 1); writeCart(c); setCart(c); } }}>-</button>
                   <div style={{ minWidth: 24, textAlign: 'center' }}>{existing.quantity}</div>
-                  <button onClick={() => { const c = readCart(); const item = c.find(it => it.product === p._id); if (item) { item.quantity += 1; writeCart(c); } }}>+</button>
+                  <button onClick={() => { const c = readCart(); const item = c.find(it => it.product === p._id); if (item) { item.quantity += 1; writeCart(c); setCart(c); } }}>+</button>
                 </div>
               ) : (
                 <button onClick={() => {
@@ -40,6 +45,7 @@ export default function ProductList() {
                   const ex = c.find(it => it.product === p._id);
                   if (ex) ex.quantity += 1; else c.push({ product: p._id, name: p.name, price: p.price, image: p.images && p.images[0] || null, quantity: 1 });
                   writeCart(c);
+                  setCart(c);
                   alert('Added to cart');
                 }}>Add to cart</button>
               )}
