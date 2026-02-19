@@ -5,23 +5,56 @@ function ProductForm({ initial = {}, onCancel, onSave }) {
   const [description, setDescription] = useState(initial.description || '');
   const [price, setPrice] = useState(initial.price || 0);
   const [stock, setStock] = useState(initial.stock || 0);
+  const [imageData, setImageData] = useState((initial.images && initial.images[0]) || null);
+
+  function handleFile(e) {
+    const f = e.target.files && e.target.files[0];
+    if (!f) { setImageData(null); return; }
+    const reader = new FileReader();
+    reader.onload = () => setImageData(reader.result);
+    reader.readAsDataURL(f);
+  }
 
   function submit(e) {
     e.preventDefault();
-    onSave({ ...initial, name, description, price: Number(price), stock: Number(stock) });
+    onSave({
+      ...initial,
+      name,
+      description,
+      price: Number(price),
+      stock: Number(stock),
+      images: imageData ? [imageData] : initial.images || []
+    });
   }
 
   return (
     <form onSubmit={submit} style={{ marginBottom: 12 }}>
       <div>
+        <label style={{ display: 'block', fontSize: 12 }}>Name</label>
         <input placeholder="Name" value={name} onChange={e => setName(e.target.value)} />
       </div>
       <div>
+        <label style={{ display: 'block', fontSize: 12 }}>Description</label>
         <input placeholder="Description" value={description} onChange={e => setDescription(e.target.value)} />
       </div>
-      <div style={{ display: 'flex', gap: 8 }}>
-        <input placeholder="Price" type="number" value={price} onChange={e => setPrice(e.target.value)} />
-        <input placeholder="Stock" type="number" value={stock} onChange={e => setStock(e.target.value)} />
+      <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+        <div style={{ display: 'flex', flexDirection: 'column' }}>
+          <label style={{ fontSize: 12 }}>Price (₹)</label>
+          <input placeholder="Price" type="number" value={price} onChange={e => setPrice(e.target.value)} />
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column' }}>
+          <label style={{ fontSize: 12 }}>Stock</label>
+          <input placeholder="Stock" type="number" value={stock} onChange={e => setStock(e.target.value)} />
+        </div>
+      </div>
+      <div style={{ marginTop: 8 }}>
+        <label style={{ display: 'block', fontSize: 12 }}>Product image</label>
+        <input type="file" accept="image/*" onChange={handleFile} />
+        {imageData && (
+          <div style={{ marginTop: 8 }}>
+            <img src={imageData} alt="preview" style={{ maxWidth: 160, borderRadius: 6, border: '1px solid #eee' }} />
+          </div>
+        )}
       </div>
       <div style={{ marginTop: 6 }}>
         <button type="submit">Save</button>
@@ -51,6 +84,7 @@ export default function AdminDashboard({ token }) {
   }
 
   async function createProduct(p) {
+    // backend expects JSON with an `images` array (we send data URLs here)
     const res = await fetch('/api/products', {
       method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
       body: JSON.stringify(p)
@@ -91,6 +125,11 @@ export default function AdminDashboard({ token }) {
                 <ProductForm initial={p} onCancel={() => setEditing(null)} onSave={updateProduct} />
               ) : (
                 <>
+                  {p.images && p.images[0] && (
+                    <div style={{ marginBottom: 8 }}>
+                      <img src={p.images[0]} alt={p.name} style={{ maxWidth: '100%', maxHeight: 120, objectFit: 'cover', borderRadius: 6 }} />
+                    </div>
+                  )}
                   <h4 style={{ marginTop: 0 }}>{p.name}</h4>
                   <div>{p.description}</div>
                   <div style={{ fontWeight: 'bold', marginTop: 8 }}>₹{p.price}</div>
