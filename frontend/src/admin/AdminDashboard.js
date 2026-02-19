@@ -69,6 +69,7 @@ export default function AdminDashboard({ token }) {
   const [loading, setLoading] = useState(false);
   const [editing, setEditing] = useState(null);
   const [creating, setCreating] = useState(false);
+  const [dupPrompt, setDupPrompt] = useState(null);
 
   useEffect(() => { fetchProducts(); }, []);
 
@@ -87,20 +88,9 @@ export default function AdminDashboard({ token }) {
     // Check for existing product with same name (case-insensitive)
     const existing = products.find(x => (x.name || '').trim().toLowerCase() === (p.name || '').trim().toLowerCase());
     if (existing) {
-      const overwrite = window.confirm('A product with this name already exists. Press OK to overwrite it, or Cancel to create a new product.');
-      if (overwrite) {
-        // merge and update existing
-        const merged = { ...existing, ...p };
-        const resu = await fetch('/api/products/' + existing._id, {
-          method: 'PUT', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
-          body: JSON.stringify(merged)
-        });
-        if (!resu.ok) { alert('Error overwriting product'); return; }
-        setCreating(false);
-        fetchProducts();
-        return;
-      }
-      // else fallthrough to create a new product (allow duplicate name)
+      // show three-option prompt: Overwrite / Create New / Cancel
+      setDupPrompt({ existing, candidate: p });
+      return;
     }
 
     // backend expects JSON with an `images` array (we send data URLs here)
@@ -111,6 +101,37 @@ export default function AdminDashboard({ token }) {
     if (!res.ok) { alert('Error creating product'); return; }
     setCreating(false);
     fetchProducts();
+  }
+
+  async function handleOverwrite() {
+    if (!dupPrompt) return;
+    const { existing, candidate } = dupPrompt;
+    const merged = { ...existing, ...candidate };
+    const res = await fetch('/api/products/' + existing._id, {
+      method: 'PUT', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+      body: JSON.stringify(merged)
+    });
+    if (!res.ok) { alert('Error overwriting product'); return; }
+    setDupPrompt(null);
+    setCreating(false);
+    fetchProducts();
+  }
+
+  async function handleCreateNew() {
+    if (!dupPrompt) return;
+    const { candidate } = dupPrompt;
+    const res = await fetch('/api/products', {
+      method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+      body: JSON.stringify(candidate)
+    });
+    if (!res.ok) { alert('Error creating product'); return; }
+    setDupPrompt(null);
+    setCreating(false);
+    fetchProducts();
+  }
+
+  function handleCancelPrompt() {
+    setDupPrompt(null);
   }
 
   async function updateProduct(p) {
@@ -132,6 +153,19 @@ export default function AdminDashboard({ token }) {
 
   return (
     <div>
+      {dupPrompt && (
+        <div style={{ position: 'fixed', left: 0, top: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 60 }}>
+          <div style={{ background: '#fff', padding: 20, borderRadius: 8, width: 480, maxWidth: '90%' }}>
+            <h4>Duplicate product name</h4>
+            <p>A product named "{dupPrompt.candidate.name}" already exists. What would you like to do?</p>
+            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 12 }}>
+              <button onClick={handleOverwrite}>Overwrite</button>
+              <button onClick={handleCreateNew}>Create New</button>
+              <button onClick={handleCancelPrompt}>Cancel</button>
+            </div>
+          </div>
+        </div>
+      )}
       <div style={{ marginBottom: 12 }}>
         <button onClick={() => setCreating(true)}>Create product</button>
       </div>
