@@ -2,26 +2,34 @@ import React, { useEffect, useState } from 'react';
 
 export default function ProductList() {
   const [products, setProducts] = useState([]);
-
-  useEffect(() => {
-    fetch('/api/products')
-      .then(r => r.json())
-      .then(data => setProducts(data))
-      .catch(() => setProducts([]));
-  }, []);
-
-  if (!products || products.length === 0) return <div>No products yet.</div>;
-
   function readCart() { try { return JSON.parse(localStorage.getItem('vhh_cart') || '[]'); } catch { return []; } }
   function writeCart(c) { localStorage.setItem('vhh_cart', JSON.stringify(c)); window.dispatchEvent(new Event('cart-updated')); }
   const [cart, setCart] = useState(readCart());
+
+  async function fetchProducts() {
+    try {
+      const r = await fetch('/api/products');
+      const data = await r.json();
+      setProducts(data);
+    } catch (err) {
+      setProducts([]);
+    }
+  }
+
   useEffect(() => {
     const onUpdate = () => setCart(readCart());
-    window.addEventListener('cart-updated', onUpdate);
     const onProducts = () => { fetchProducts(); };
+    window.addEventListener('cart-updated', onUpdate);
     window.addEventListener('products-updated', onProducts);
-    return () => window.removeEventListener('cart-updated', onUpdate);
+    // initial load
+    fetchProducts();
+    return () => {
+      window.removeEventListener('cart-updated', onUpdate);
+      window.removeEventListener('products-updated', onProducts);
+    };
   }, []);
+
+  if (!products || products.length === 0) return <div>No products yet.</div>;
 
   return (
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(200px,1fr))', gap: 12 }}>
