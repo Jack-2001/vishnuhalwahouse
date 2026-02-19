@@ -84,6 +84,25 @@ export default function AdminDashboard({ token }) {
   }
 
   async function createProduct(p) {
+    // Check for existing product with same name (case-insensitive)
+    const existing = products.find(x => (x.name || '').trim().toLowerCase() === (p.name || '').trim().toLowerCase());
+    if (existing) {
+      const overwrite = window.confirm('A product with this name already exists. Press OK to overwrite it, or Cancel to create a new product.');
+      if (overwrite) {
+        // merge and update existing
+        const merged = { ...existing, ...p };
+        const resu = await fetch('/api/products/' + existing._id, {
+          method: 'PUT', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+          body: JSON.stringify(merged)
+        });
+        if (!resu.ok) { alert('Error overwriting product'); return; }
+        setCreating(false);
+        fetchProducts();
+        return;
+      }
+      // else fallthrough to create a new product (allow duplicate name)
+    }
+
     // backend expects JSON with an `images` array (we send data URLs here)
     const res = await fetch('/api/products', {
       method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
